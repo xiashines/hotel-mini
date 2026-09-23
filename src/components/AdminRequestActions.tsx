@@ -32,7 +32,7 @@ export default function AdminRequestActions({ requestId, status, settlementStatu
 
   async function handleToggleSettlement() {
     setLoading(true);
-    await toggleSettlement(requestId, settlementStatus);
+    await toggleSettlement(requestId);
     setLoading(false);
   }
 
