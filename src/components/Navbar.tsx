@@ -15,17 +15,17 @@ export default async function Navbar() {
             <Link href="/" className="flex-shrink-0 flex items-center font-bold text-xl text-blue-600 dark:text-blue-400">
               هتل مینی
             </Link>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8 sm:space-x-reverse">
-              <Link href="/rooms" className="text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors">
+            <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4 sm:space-x-reverse">
+              <Link href="/rooms" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-2 rounded-md text-sm font-medium transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
                 اتاق‌ها
               </Link>
-              {user && (
-                <Link href="/requests" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors">
+              {user?.role === 'GUEST' && (
+                <Link href="/requests" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-2 rounded-md text-sm font-medium transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
                   درخواست‌های من
                 </Link>
               )}
               {user?.role === 'ADMIN' && (
-                <Link href="/admin" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors">
+                <Link href="/admin" className="text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm">
                   پنل مدیریت
                 </Link>
               )}
