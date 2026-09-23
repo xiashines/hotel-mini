@@ -8,8 +8,8 @@ interface Props {
 }
 
 export default async function AdminRequestsPage({ searchParams }: Props) {
-  const resolvedParams = await searchParams;
-  const filter = typeof resolvedParams.filter === 'string' ? resolvedParams.filter : undefined;
+  const resolvedParams = searchParams ? await searchParams : {};
+  const filter = typeof resolvedParams?.filter === 'string' ? resolvedParams.filter : undefined;
 
   const whereClause: Prisma.ReservationRequestWhereInput = 
     filter === 'unsettled' 
