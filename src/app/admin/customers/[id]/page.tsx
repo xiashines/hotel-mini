@@ -24,10 +24,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   const history = await prisma.statusHistory.findMany({
     where: { guestId: customer.id },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      request: true
-    }
+    orderBy: { createdAt: 'desc' }
   });
 
   const formatDate = (date: Date) => {

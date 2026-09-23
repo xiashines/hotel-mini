@@ -36,6 +36,18 @@ export default function AdminRequestActions({ requestId, status, settlementStatu
     setLoading(false);
   }
 
+  async function handleCancelApproved() {
+    if (confirm('آیا از ابطال این رزرو تأیید شده اطمینان دارید؟ اتاق‌ها آزاد خواهند شد.')) {
+      setLoading(true);
+      const { cancelApprovedRequest } = await import('@/app/actions/admin');
+      const res = await cancelApprovedRequest(requestId);
+      setLoading(false);
+      if (!res.success) {
+        alert(res.message);
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100">
       <div className="flex gap-2">
@@ -56,6 +68,15 @@ export default function AdminRequestActions({ requestId, status, settlementStatu
               رد کردن
             </button>
           </>
+        )}
+        {status === 'APPROVED' && (
+          <button 
+            onClick={handleCancelApproved} 
+            disabled={loading}
+            className="w-full bg-red-600 text-white py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50"
+          >
+            ابطال رزرو
+          </button>
         )}
       </div>
       <button 

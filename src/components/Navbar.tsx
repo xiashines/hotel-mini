@@ -35,7 +35,9 @@ export default async function Navbar() {
             <ThemeToggle />
             {user ? (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{user.name}</span>
+                <Link href="/profile" className="text-sm text-gray-700 dark:text-gray-300 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition">
+                  {user.name}
+                </Link>
                 <form action={logOut}>
                   <button type="submit" className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
                     خروج

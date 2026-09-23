@@ -128,3 +128,47 @@ export async function toggleSettlement(requestId: string, currentStatus: Settlem
   revalidatePath('/admin/requests');
   revalidatePath('/admin/customers');
 }
+
+export async function cancelApprovedRequest(requestId: string) {
+  const admin = await getAdminUser();
+
+  const request = await prisma.reservationRequest.findUnique({
+    where: { id: requestId },
+    include: { reservation: true }
+  });
+
+  if (!request) return { success: false, message: 'درخواست یافت نشد.' };
+  if (request.status !== 'APPROVED') return { success: false, message: 'فقط درخواست‌های تأیید شده قابل ابطال هستند.' };
+
+  await prisma.$transaction(async (tx) => {
+    // Delete the reservation to free up the rooms
+    if (request.reservation) {
+      await tx.reservation.delete({
+        where: { id: request.reservation.id }
+      });
+    }
+
+    // Update request status
+    await tx.reservationRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED' }
+    });
+
+    // Add to history
+    await tx.statusHistory.create({
+      data: {
+        guestId: request.guestId,
+        requestId: request.id,
+        field: 'REQUEST_STATUS',
+        fromStatus: 'APPROVED',
+        toStatus: 'REJECTED',
+        note: 'ابطال توسط مدیر',
+        actorId: admin.id,
+      }
+    });
+  });
+
+  revalidatePath('/admin/requests');
+  revalidatePath('/admin/stays');
+  return { success: true, message: 'رزرو با موفقیت باطل شد.' };
+}

@@ -76,3 +76,42 @@ export async function deleteReservationRequest(requestId: string) {
   revalidatePath('/requests');
   return { success: true };
 }
+
+export async function getAvailableRooms(checkInStr: string, checkOutStr: string) {
+  const checkIn = new Date(checkInStr);
+  const checkOut = new Date(checkOutStr);
+
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
+    return [];
+  }
+
+  // Get all active rooms
+  const allRooms = await prisma.room.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' }
+  });
+
+  // Get overlapping reservations
+  const overlappingReservations = await prisma.reservation.findMany({
+    where: {
+      checkIn: { lte: checkOut },
+      checkOut: { gte: checkIn }
+    },
+    include: {
+      request: {
+        include: { rooms: true }
+      }
+    }
+  });
+
+  const bookedRoomIds = new Set<string>();
+  overlappingReservations.forEach(res => {
+    res.request.rooms.forEach(r => bookedRoomIds.add(r.roomId));
+  });
+
+  // Return rooms with availability flag
+  return allRooms.map(room => ({
+    ...room,
+    isAvailable: !bookedRoomIds.has(room.id)
+  }));
+}
