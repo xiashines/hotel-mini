@@ -24,23 +24,23 @@ export async function approveRequest(requestId: string) {
   if (!request) return { success: false, message: 'درخواست یافت نشد.' };
   if (request.status === 'APPROVED') return { success: false, message: 'این درخواست قبلاً تأیید شده است.' };
 
-  // Check for overlaps
-  const overlappingReservations = await prisma.reservation.findMany({
+  // Check for overlaps with APPROVED or PENDING requests for the same rooms
+  const overlappingRequests = await prisma.reservationRequest.findMany({
     where: {
-      checkIn: { lte: request.checkOut },
-      checkOut: { gte: request.checkIn },
-      request: {
-        rooms: {
-          some: {
-            roomId: { in: request.rooms.map(r => r.roomId) }
-          }
+      id: { not: requestId },
+      status: { in: ['APPROVED', 'PENDING'] },
+      checkIn: { lt: request.checkOut },
+      checkOut: { gt: request.checkIn },
+      rooms: {
+        some: {
+          roomId: { in: request.rooms.map(r => r.roomId) }
         }
       }
     }
   });
 
-  if (overlappingReservations.length > 0) {
-    return { success: false, message: 'خطا: این اتاق‌ها در تاریخ‌های انتخابی با رزرو دیگری تداخل دارند.' };
+  if (overlappingRequests.length > 0) {
+    return { success: false, message: 'خطا: این اتاق‌ها در این تاریخ‌ها دارای درخواست تأیید شده یا معلق دیگری هستند و تداخل دارند.' };
   }
 
   // Transaction for safe approve

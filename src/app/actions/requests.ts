@@ -103,8 +103,8 @@ export async function getAvailableRooms(checkInStr: string, checkOutStr: string)
   const overlappingRequests = await prisma.reservationRequest.findMany({
     where: {
       status: { in: ['APPROVED', 'PENDING'] },
-      checkIn: { lte: checkOut },
-      checkOut: { gte: checkIn }
+      checkIn: { lt: checkOut },
+      checkOut: { gt: checkIn }
     },
     include: {
       rooms: true
@@ -121,4 +121,45 @@ export async function getAvailableRooms(checkInStr: string, checkOutStr: string)
     ...room,
     isAvailable: !bookedRoomIds.has(room.id)
   }));
+}
+
+export async function getFullyBookedDates() {
+  const allRoomsCount = await prisma.room.count({ where: { isActive: true } });
+  if (allRoomsCount === 0) return [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const futureRequests = await prisma.reservationRequest.findMany({
+    where: {
+      status: { in: ['APPROVED', 'PENDING'] },
+      checkOut: { gt: today }
+    },
+    include: { rooms: true }
+  });
+
+  const bookedCountsPerDay: Record<string, Set<string>> = {};
+
+  // For each request, mark the dates between checkIn and checkOut (exclusive of checkOut day)
+  futureRequests.forEach(req => {
+    let current = new Date(req.checkIn);
+    current.setHours(0, 0, 0, 0);
+    const end = new Date(req.checkOut);
+    end.setHours(0, 0, 0, 0);
+
+    while (current < end) {
+      const dateStr = current.toISOString().split('T')[0];
+      if (!bookedCountsPerDay[dateStr]) {
+        bookedCountsPerDay[dateStr] = new Set();
+      }
+      req.rooms.forEach(r => bookedCountsPerDay[dateStr].add(r.roomId));
+      current.setDate(current.getDate() + 1);
+    }
+  });
+
+  const fullyBookedDates = Object.keys(bookedCountsPerDay).filter(
+    dateStr => bookedCountsPerDay[dateStr].size >= allRoomsCount
+  );
+
+  return fullyBookedDates;
 }

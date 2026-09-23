@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
-import { getAvailableRooms, createReservationRequest } from '@/app/actions/requests';
+import { getAvailableRooms, createReservationRequest, getFullyBookedDates } from '@/app/actions/requests';
 import type { Room } from '@prisma/client';
 
 export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
@@ -13,6 +13,11 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
   const [rooms, setRooms] = useState<(Room & { isAvailable?: boolean })[]>(initialRooms.map(r => ({ ...r, isAvailable: true })));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
+
+  useEffect(() => {
+    getFullyBookedDates().then(dates => setBookedDates(dates));
+  }, []);
 
   useEffect(() => {
     async function checkAvailability() {
@@ -20,9 +25,10 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
         const checkInIso = checkIn.toDate().toISOString();
         const checkOutIso = checkOut.toDate().toISOString();
         const availableRooms = await getAvailableRooms(checkInIso, checkOutIso);
-        if (availableRooms.length > 0) {
-          setRooms(availableRooms);
-        }
+        
+        // Ensure rooms without isAvailable property are still handled correctly
+        // getAvailableRooms already adds isAvailable
+        setRooms(availableRooms);
       } else {
         setRooms(initialRooms.map(r => ({ ...r, isAvailable: true })));
       }
@@ -36,14 +42,17 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
       return;
     }
     
-    // Add real ISO dates to formData
     formData.set('checkIn', checkIn.toDate().toISOString());
     formData.set('checkOut', checkOut.toDate().toISOString());
 
     setLoading(true);
     setError(null);
     try {
-      await createReservationRequest(formData);
+      const res = await createReservationRequest(formData);
+      if (res && res.success === false) {
+        setError(res.message);
+        setLoading(false);
+      }
     } catch (err: any) {
       setError(err.message || 'خطایی رخ داد.');
       setLoading(false);
@@ -53,10 +62,21 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
   // Calculate min dates based on current time
   const now = new Date();
   const minDateForCheckIn = new Date();
-  // If it's past 12:00 PM, you cannot book for today anymore.
   if (now.getHours() >= 12) {
     minDateForCheckIn.setDate(minDateForCheckIn.getDate() + 1);
   }
+
+  const mapDays = ({ date }: { date: any }) => {
+    const isoDate = date.toDate().toISOString().split('T')[0];
+    if (bookedDates.includes(isoDate)) {
+      return {
+        disabled: true,
+        style: { color: "#ccc", textDecoration: "line-through" },
+        title: "ظرفیت هتل تکمیل است"
+      };
+    }
+    return {};
+  };
 
   return (
     <form action={handleSubmit} className="space-y-6">
@@ -75,6 +95,7 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
             value={checkIn}
             onChange={setCheckIn}
             minDate={minDateForCheckIn}
+            mapDays={mapDays}
             inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition"
             containerClassName="w-full"
             placeholder="انتخاب کنید..."
@@ -88,9 +109,11 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
             value={checkOut}
             onChange={setCheckOut}
             minDate={checkIn ? new Date(checkIn.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date(minDateForCheckIn.getTime() + 24 * 60 * 60 * 1000)}
-            inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition"
+            mapDays={mapDays}
+            disabled={!checkIn}
+            inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition disabled:opacity-50 disabled:cursor-not-allowed"
             containerClassName="w-full"
-            placeholder="انتخاب کنید..."
+            placeholder={checkIn ? "انتخاب کنید..." : "ابتدا تاریخ ورود را انتخاب کنید"}
           />
         </div>
       </div>
