@@ -37,5 +37,6 @@ export const authConfig = {
       return token;
     }
   },
+  trustHost: true,
   providers: [], // Add providers in auth.ts
 } satisfies NextAuthConfig;

@@ -4,7 +4,6 @@ import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { redirect } from 'next/navigation';
 
 export async function login(prevState: any, formData: FormData) {
   try {
@@ -20,7 +19,7 @@ export async function login(prevState: any, formData: FormData) {
         case 'CredentialsSignin':
           return { success: false, message: 'ایمیل یا رمز عبور اشتباه است.' };
         default:
-          return { success: false, message: 'خطای ناشناخته‌ای رخ داده است.' };
+          return { success: false, message: 'خطای ناشناخته‌ای رخ داد.' };
       }
     }
     throw error;
@@ -33,7 +32,7 @@ export async function register(prevState: any, formData: FormData) {
   const name = formData.get('name') as string;
 
   if (!email || !password || !name) {
-    return { success: false, message: 'همه فیلدها الزامی است.' };
+    return { success: false, message: 'لطفاً تمامی فیلدها را پر کنید.' };
   }
 
   if (password.length < 8) {
@@ -45,7 +44,7 @@ export async function register(prevState: any, formData: FormData) {
   });
 
   if (existingUser) {
-    return { success: false, message: 'این ایمیل قبلاً ثبت شده است.' };
+    return { success: false, message: 'این ایمیل قبلاً ثبت نام کرده است.' };
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -59,7 +58,7 @@ export async function register(prevState: any, formData: FormData) {
     },
   });
 
-  return { success: true, message: 'ثبت‌نام با موفقیت انجام شد. حالا می‌توانید وارد شوید.' };
+  return { success: true, message: 'ثبت‌نام با موفقیت انجام شد. لطفاً وارد شوید.' };
 }
 
 export async function logOut() {

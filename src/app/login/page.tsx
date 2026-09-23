@@ -20,10 +20,13 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const res = await login(null, formData);
 
-    if (res.success) {
+    if (res && res.success) {
       window.location.href = '/';
-    } else {
+    } else if (res) {
       setError(res.message);
+      setLoading(false);
+    } else {
+      setError('خطای ناشناخته');
       setLoading(false);
     }
   }
