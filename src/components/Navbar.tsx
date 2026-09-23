@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { auth } from '@/auth';
-import { logOut } from '@/app/actions/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LogoutButton } from '@/components/LogoutButton';
 
 export default async function Navbar() {
   const session = await auth();
@@ -51,11 +51,7 @@ export default async function Navbar() {
                 <Link href="/profile" className="text-sm text-gray-700 dark:text-gray-300 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition">
                   {user.name}
                 </Link>
-                <form action={logOut}>
-                  <button type="submit" className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
-                    خروج
-                  </button>
-                </form>
+                <LogoutButton />
               </div>
             ) : (
               <div className="flex gap-2">
