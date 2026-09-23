@@ -53,3 +53,26 @@ export async function createReservationRequest(formData: FormData) {
   revalidatePath('/requests');
   redirect('/requests');
 }
+
+export async function deleteReservationRequest(requestId: string) {
+  const user = await getUser();
+
+  const request = await prisma.reservationRequest.findUnique({
+    where: { id: requestId }
+  });
+
+  if (!request || request.guestId !== user.id) {
+    return { success: false, message: 'درخواست یافت نشد.' };
+  }
+
+  if (request.status !== 'PENDING') {
+    return { success: false, message: 'فقط درخواست‌های در انتظار بررسی قابل لغو هستند.' };
+  }
+
+  await prisma.reservationRequest.delete({
+    where: { id: requestId }
+  });
+
+  revalidatePath('/requests');
+  return { success: true };
+}

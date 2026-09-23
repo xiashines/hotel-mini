@@ -44,3 +44,26 @@ export async function toggleRoomStatus(id: string, isActive: boolean) {
   revalidatePath('/admin/rooms');
   revalidatePath('/rooms');
 }
+
+export async function deleteRoom(id: string) {
+  await checkAdmin();
+  
+  const room = await prisma.room.findUnique({
+    where: { id },
+    include: { requestRooms: { take: 1 } }
+  });
+
+  if (!room) return { success: false, message: 'اتاق یافت نشد.' };
+  
+  if (room.requestRooms.length > 0) {
+    return { success: false, message: 'این اتاق سابقه درخواست یا رزرو دارد و قابل حذف کامل نیست. در صورت عدم نیاز، آن را غیرفعال کنید.' };
+  }
+
+  await prisma.room.delete({
+    where: { id }
+  });
+
+  revalidatePath('/admin/rooms');
+  revalidatePath('/rooms');
+  return { success: true };
+}
