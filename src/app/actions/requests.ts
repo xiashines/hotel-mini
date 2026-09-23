@@ -26,14 +26,37 @@ export async function createReservationRequest(formData: FormData) {
   const travelParty = formData.get('travelParty') as TravelParty;
   const maritalStatus = formData.get('maritalStatus') as MaritalStatus;
   const notes = formData.get('notes') as string;
-  const roomIds = formData.getAll('roomIds') as string[];
+  
+  // Clean duplicates and validate
+  const roomIds = Array.from(new Set(formData.getAll('roomIds') as string[]));
 
   if (roomIds.length === 0) {
     return { success: false, message: 'حداقل یک اتاق باید انتخاب شود.' };
   }
 
   if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
-    return { success: false, message: 'تاریخ خروج باید بعد از تاریخ ورود باشد (حداقل یک شب اقامت).' };
+    return { success: false, message: 'تاریخ ورود باید قبل از تاریخ خروج باشد (حداقل یک شب اقامت).' };
+  }
+
+  if (travelParty !== 'ALONE' && travelParty !== 'FAMILY') {
+    return { success: false, message: 'نوع سفر نامعتبر است.' };
+  }
+
+  if (maritalStatus !== 'SINGLE' && maritalStatus !== 'MARRIED') {
+    return { success: false, message: 'وضعیت تاهل نامعتبر است.' };
+  }
+
+  // Check if rooms exist and are active
+  const selectedRooms = await prisma.room.findMany({
+    where: { id: { in: roomIds } }
+  });
+
+  if (selectedRooms.length !== roomIds.length) {
+    return { success: false, message: 'یکی از اتاق‌های انتخابی وجود ندارد.' };
+  }
+
+  if (selectedRooms.some(r => !r.isActive)) {
+    return { success: false, message: 'یکی از اتاق‌های انتخابی در حال حاضر غیرفعال است.' };
   }
 
   // Create the request
@@ -44,7 +67,7 @@ export async function createReservationRequest(formData: FormData) {
       checkOut,
       travelParty,
       maritalStatus,
-      notes,
+      notes: notes?.substring(0, 500), // Limit notes length
       roomCount: roomIds.length,
       rooms: {
         create: roomIds.map(roomId => ({
@@ -70,7 +93,7 @@ export async function deleteReservationRequest(requestId: string) {
   }
 
   if (request.status !== 'PENDING') {
-    return { success: false, message: 'فقط درخواست‌های در انتظار بررسی قابل لغو هستند.' };
+    return { success: false, message: 'این درخواست دیگر قابل حذف نیست.' };
   }
 
   await prisma.reservationRequest.delete({
@@ -142,7 +165,7 @@ export async function getFullyBookedDates() {
 
   // For each request, mark the dates between checkIn and checkOut (exclusive of checkOut day)
   futureRequests.forEach(req => {
-    let current = new Date(req.checkIn);
+    const current = new Date(req.checkIn);
     current.setHours(0, 0, 0, 0);
     const end = new Date(req.checkOut);
     end.setHours(0, 0, 0, 0);

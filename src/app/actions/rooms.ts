@@ -33,6 +33,29 @@ export async function createRoom(formData: FormData) {
   revalidatePath('/rooms');
 }
 
+export async function updateRoom(id: string, formData: FormData) {
+  await checkAdmin();
+  
+  const name = formData.get('name') as string;
+  const capacity = parseInt(formData.get('capacity') as string);
+  const pricePerNight = parseInt(formData.get('pricePerNight') as string);
+  const description = formData.get('description') as string;
+
+  await prisma.room.update({
+    where: { id },
+    data: {
+      name,
+      capacity,
+      pricePerNight,
+      description,
+    },
+  });
+
+  revalidatePath('/admin/rooms');
+  revalidatePath('/rooms');
+  return { success: true };
+}
+
 export async function toggleRoomStatus(id: string, isActive: boolean) {
   await checkAdmin();
   

@@ -25,7 +25,7 @@ export async function updateProfile(formData: FormData) {
 
   if (!user) return { success: false, message: 'کاربر یافت نشد.' };
 
-  const dataToUpdate: any = { name };
+  const dataToUpdate: Record<string, string> = { name };
 
   // If trying to update password
   if (currentPassword && newPassword) {

@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# هتل مینی (Hotel Mini) 🏨
 
-## Getting Started
+هتل مینی یک سیستم مدیریت رزرو هتل با رابط کاربری راست‌چین (RTL) و تقویم شمسی است که برای پروژه‌های دانشجویی و MVP های هتلداری طراحی شده است.
 
-First, run the development server:
+این سیستم شامل دو بخش اصلی است:
+- **پنل مشتریان**: برای مشاهده اتاق‌ها، ثبت نام، ثبت درخواست رزرو با تقویم شمسی دقیق، و پیگیری وضعیت درخواست‌ها.
+- **پنل مدیریت (ادمین)**: برای تایید/رد درخواست‌ها، مدیریت اتاق‌ها (افزودن، ویرایش، حذف، غیرفعال‌سازی)، پیگیری اقامت‌های فعال، و گزارش تسویه حساب.
 
+## 🚀 تکنولوژی‌های استفاده شده (Tech Stack)
+
+- **فریم‌ورک**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **زبان**: [TypeScript](https://www.typescriptlang.org/)
+- **استایل**: [Tailwind CSS](https://tailwindcss.com/)
+- **دیتابیس**: [PostgreSQL (Neon)](https://neon.tech/)
+- **مدیریت دیتابیس (ORM)**: [Prisma](https://www.prisma.io/)
+- **احراز هویت**: [NextAuth.js v5 (Auth.js)](https://authjs.dev/)
+- **تقویم شمسی**: `react-multi-date-picker`
+- **آیکون‌ها**: `lucide-react`
+
+---
+
+## ⚙️ راهنمای راه‌اندازی محلی (Local Development)
+
+### پیش‌نیازها
+- Node.js (نسخه 18 یا بالاتر)
+- npm یا yarn
+- داکر (Docker) برای دیتابیس لوکال (یا یک دیتابیس Postgres آنلاین مثل Neon)
+
+### ۱. نصب وابستگی‌ها
+ابتدا پروژه را کلون کرده و پکیج‌ها را نصب کنید:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### ۲. تنظیم متغیرهای محیطی
+فایل `.env.example` را به `.env` تغییر نام دهید و اطلاعات زیر را پر کنید:
+```env
+# اتصال به دیتابیس (نمونه برای Neon)
+DATABASE_URL="postgresql://username:password@host/database"
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# کلید مخفی برای نشست‌های کاربری (یک متن رندوم بلند)
+AUTH_SECRET="super-secret-key-for-development"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### ۳. راه‌اندازی دیتابیس (Prisma)
+ابتدا ساختار دیتابیس را اعمال کنید (Push):
+```bash
+npx prisma db push
+```
 
-## Learn More
+### ۴. ایجاد داده‌های اولیه (Seed)
+برای ساخت حساب کاربری ادمین و چند اتاق پیش‌فرض، دستور زیر را اجرا کنید:
+```bash
+npx prisma db seed
+```
+> **توجه:** پس از اجرای این دستور، ادمین با مشخصات زیر ساخته می‌شود:
+> - **ایمیل:** `admin@hotel.local`
+> - **رمز عبور:** `Admin123!`
 
-To learn more about Next.js, take a look at the following resources:
+### ۵. اجرای پروژه
+حالا سرور را استارت کنید:
+```bash
+npm run dev
+```
+سایت در آدرس `http://localhost:3000` در دسترس خواهد بود.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🌐 راهنمای استقرار (Deployment) - روی Netlify
 
-## Deploy on Vercel
+این پروژه برای اجرا در محیط Serverless (مانند Netlify یا Vercel) بهینه‌سازی شده است. در حال حاضر این پروژه روی **Netlify** دیپلوی شده است.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### تنظیمات Netlify:
+۱. پروژه خود را به Netlify متصل کنید.
+۲. در بخش متغیرهای محیطی (Environment Variables)، دو مقدار اصلی را تنظیم کنید:
+   - `DATABASE_URL` (توصیه می‌شود از Neon Postgres استفاده کنید)
+   - `AUTH_SECRET` (حتماً باید تنظیم شود تا سیستم لاگین کار کند)
+۳. دستور Build به صورت خودکار در `package.json` روی `prisma generate && next build` تنظیم شده است تا خطای Exit Code 2 در نتلیفای رخ ندهد.
+۴. همچنین به خاطر مشکلات کوکی‌ها روی شبکه Edge، تنظیم `trustHost: true` در هسته NextAuth اعمال شده است و خروج از حساب (Logout) از طریق Client Component هندل می‌شود.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🛡️ نکات امنیتی
+
+- **نقش‌ها (Roles)**: نقش کاربری فقط در سمت سرور و درون JWT ذخیره می‌شود. هیچ کاربری نمی‌تواند مستقیماً با دستکاری کوکی، ادمین شود.
+- **جلوگیری از تداخل (Race Condition)**: تراکنش‌های دیتابیس (Transactions) به صورت اتمیک انجام می‌شوند تا امکان تایید همزمان یک اتاق برای دو نفر وجود نداشته باشد.
+- **پسوردها**: تمام پسوردها با الگوریتم `bcrypt` هش شده و سپس در دیتابیس ذخیره می‌شوند.
+
+---
+*توسعه داده شده به صورت MVP برای پروژه دانشجویی/آزمایشی*

@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { RequestStatus, SettlementStatus, HistoryField } from '@prisma/client';
+import { SettlementStatus } from '@prisma/client';
 
 async function getAdminUser() {
   const session = await auth();
@@ -21,8 +21,8 @@ export async function approveRequest(requestId: string) {
     include: { rooms: true }
   });
 
-  if (!request) return { success: false, message: 'درخواست یافت نشد.' };
-  if (request.status === 'APPROVED') return { success: false, message: 'این درخواست قبلاً تأیید شده است.' };
+  if (!request) return { success: false, message: 'درخواست پیدا نشد.' };
+  if (request.status === 'APPROVED') return { success: false, message: 'این درخواست از قبل تایید شده است.' };
 
   // Check for overlaps with APPROVED or PENDING requests for the same rooms
   const overlappingRequests = await prisma.reservationRequest.findMany({
@@ -40,7 +40,7 @@ export async function approveRequest(requestId: string) {
   });
 
   if (overlappingRequests.length > 0) {
-    return { success: false, message: 'خطا: این اتاق‌ها در این تاریخ‌ها دارای درخواست تأیید شده یا معلق دیگری هستند و تداخل دارند.' };
+    return { success: false, message: 'خطا: این اتاق‌ها در این تاریخ‌ها توسط فرد دیگری رزرو یا درحال بررسی هستند.' };
   }
 
   // Transaction for safe approve
@@ -71,14 +71,15 @@ export async function approveRequest(requestId: string) {
 
   revalidatePath('/admin/requests');
   revalidatePath('/admin/stays');
-  return { success: true, message: 'تأیید با موفقیت انجام شد.' };
+  return { success: true, message: 'درخواست با موفقیت تایید شد.' };
 }
 
 export async function rejectRequest(requestId: string) {
   const admin = await getAdminUser();
 
   const request = await prisma.reservationRequest.findUnique({ where: { id: requestId } });
-  if (!request) return;
+  if (!request) return { success: false, message: 'درخواست یافت نشد.' };
+  if (request.status !== 'PENDING') return { success: false, message: 'فقط درخواست‌های معلق قابل رد شدن هستند.' };
 
   await prisma.$transaction([
     prisma.reservationRequest.update({
@@ -98,6 +99,7 @@ export async function rejectRequest(requestId: string) {
   ]);
 
   revalidatePath('/admin/requests');
+  return { success: true, message: 'درخواست با موفقیت رد شد.' };
 }
 
 export async function toggleSettlement(requestId: string, currentStatus: SettlementStatus) {
@@ -138,7 +140,7 @@ export async function cancelApprovedRequest(requestId: string) {
   });
 
   if (!request) return { success: false, message: 'درخواست یافت نشد.' };
-  if (request.status !== 'APPROVED') return { success: false, message: 'فقط درخواست‌های تأیید شده قابل ابطال هستند.' };
+  if (request.status !== 'APPROVED') return { success: false, message: 'این درخواست هنوز تایید نشده است.' };
 
   await prisma.$transaction(async (tx) => {
     // Delete the reservation to free up the rooms
@@ -162,7 +164,7 @@ export async function cancelApprovedRequest(requestId: string) {
         field: 'REQUEST_STATUS',
         fromStatus: 'APPROVED',
         toStatus: 'REJECTED',
-        note: 'ابطال توسط مدیر',
+        note: 'لغو توسط مدیر',
         actorId: admin.id,
       }
     });
@@ -170,5 +172,5 @@ export async function cancelApprovedRequest(requestId: string) {
 
   revalidatePath('/admin/requests');
   revalidatePath('/admin/stays');
-  return { success: true, message: 'رزرو با موفقیت باطل شد.' };
+  return { success: true, message: 'اقامت با موفقیت لغو شد.' };
 }

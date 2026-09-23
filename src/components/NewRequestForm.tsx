@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DatePicker from 'react-multi-date-picker';
+import { createReservationRequest, getAvailableRooms, getFullyBookedDates } from '@/app/actions/requests';
+import { Room } from '@prisma/client';
+import DatePicker, { DateObject } from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
-import { getAvailableRooms, createReservationRequest, getFullyBookedDates } from '@/app/actions/requests';
-import type { Room } from '@prisma/client';
 
 export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
-  const [checkIn, setCheckIn] = useState<any>(null);
-  const [checkOut, setCheckOut] = useState<any>(null);
+  const [checkIn, setCheckIn] = useState<DateObject | null>(null);
+  const [checkOut, setCheckOut] = useState<DateObject | null>(null);
   const [rooms, setRooms] = useState<(Room & { isAvailable?: boolean })[]>(initialRooms.map(r => ({ ...r, isAvailable: true })));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,9 +25,6 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
         const checkInIso = checkIn.toDate().toISOString();
         const checkOutIso = checkOut.toDate().toISOString();
         const availableRooms = await getAvailableRooms(checkInIso, checkOutIso);
-        
-        // Ensure rooms without isAvailable property are still handled correctly
-        // getAvailableRooms already adds isAvailable
         setRooms(availableRooms);
       } else {
         setRooms(initialRooms.map(r => ({ ...r, isAvailable: true })));
@@ -38,7 +35,7 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
 
   async function handleSubmit(formData: FormData) {
     if (!checkIn || !checkOut) {
-      setError('لطفاً تاریخ ورود و خروج را مشخص کنید.');
+      setError('لطفاً تاریخ ورود و خروج را انتخاب کنید.');
       return;
     }
     
@@ -53,20 +50,24 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
         setError(res.message);
         setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'خطایی رخ داد.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message !== 'NEXT_REDIRECT') {
+          setError(err.message || 'خطایی رخ داد.');
+        }
+      }
       setLoading(false);
     }
   }
 
-  // Calculate min dates based on current time
   const now = new Date();
   const minDateForCheckIn = new Date();
   if (now.getHours() >= 12) {
     minDateForCheckIn.setDate(minDateForCheckIn.getDate() + 1);
   }
 
-  const mapDays = ({ date }: { date: any }) => {
+  // Define proper DateObject type instead of any
+  const mapDays = ({ date }: { date: DateObject }) => {
     const isoDate = date.toDate().toISOString().split('T')[0];
     if (bookedDates.includes(isoDate)) {
       return {
@@ -98,7 +99,7 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
             mapDays={mapDays}
             inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition"
             containerClassName="w-full"
-            placeholder="انتخاب کنید..."
+            placeholder="انتخاب تاریخ..."
           />
         </div>
         <div className="flex flex-col">
@@ -113,7 +114,7 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
             disabled={!checkIn}
             inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition disabled:opacity-50 disabled:cursor-not-allowed"
             containerClassName="w-full"
-            placeholder={checkIn ? "انتخاب کنید..." : "ابتدا تاریخ ورود را انتخاب کنید"}
+            placeholder={checkIn ? "انتخاب تاریخ..." : "ابتدا تاریخ ورود را انتخاب کنید"}
           />
         </div>
       </div>
@@ -122,21 +123,21 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
         <div>
           <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">نوع سفر</label>
           <select name="travelParty" required className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition">
-            <option value="ALONE">تنها</option>
+            <option value="ALONE">مجردی</option>
             <option value="FAMILY">با خانواده</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">وضعیت تأهل</label>
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">وضعیت تاهل</label>
           <select name="maritalStatus" required className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition">
             <option value="SINGLE">مجرد</option>
-            <option value="MARRIED">متأهل</option>
+            <option value="MARRIED">متاهل</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">انتخاب اتاق (حداقل یک مورد)</label>
+        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">انتخاب اتاق‌ها (یک یا چند)</label>
         <div className="space-y-3 border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 max-h-60 overflow-y-auto">
           {rooms.map(room => (
             <label 
@@ -166,21 +167,21 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
             </label>
           ))}
           {rooms.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">هیچ اتاق فعالی برای انتخاب وجود ندارد.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">هیچ اتاقی فعلاً تعریف نشده است.</p>
           )}
         </div>
         {(!checkIn || !checkOut) && (
-          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">برای بررسی خالی بودن اتاق‌ها، ابتدا تاریخ ورود و خروج را انتخاب کنید.</p>
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">جهت بررسی دقیق ظرفیت، لطفاً تاریخ ورود و خروج را مشخص کنید.</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">توضیحات تکمیلی (اختیاری)</label>
-        <textarea name="notes" rows={3} className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="اگر درخواست خاصی دارید بنویسید..."></textarea>
+        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">توضیحات بیشتر (اختیاری)</label>
+        <textarea name="notes" rows={3} className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="اگر درخواستی دارید اینجا بنویسید..."></textarea>
       </div>
 
       <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-bold text-lg shadow-sm disabled:opacity-50">
-        {loading ? 'در حال ثبت...' : 'ثبت نهایی درخواست'}
+        {loading ? 'در حال ثبت...' : 'ثبت درخواست رزرو'}
       </button>
     </form>
   );

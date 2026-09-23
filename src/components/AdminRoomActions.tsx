@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { toggleRoomStatus, deleteRoom } from '@/app/actions/rooms';
-import { Trash2, Power, PowerOff } from 'lucide-react';
+import { Trash2, Power, PowerOff, Edit } from 'lucide-react';
+import Link from 'next/link';
 
 export function AdminRoomActions({ roomId, isActive }: { roomId: string, isActive: boolean }) {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export function AdminRoomActions({ roomId, isActive }: { roomId: string, isActiv
   }
 
   async function handleDelete() {
-    if (confirm('آیا از حذف کامل این اتاق اطمینان دارید؟ این عمل غیرقابل بازگشت است.')) {
+    if (confirm('آیا از حذف این اتاق مطمئن هستید؟ اتاق‌هایی که تاریخچه رزرو دارند حذف نمی‌شوند.')) {
       setLoading(true);
       const res = await deleteRoom(roomId);
       setLoading(false);
@@ -26,6 +27,13 @@ export function AdminRoomActions({ roomId, isActive }: { roomId: string, isActiv
 
   return (
     <div className="flex gap-2">
+      <Link 
+        href={`/admin/rooms/${roomId}/edit`}
+        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 transition"
+      >
+        <Edit size={16} />
+        ویرایش
+      </Link>
       <button 
         onClick={handleToggle}
         disabled={loading}
@@ -36,7 +44,7 @@ export function AdminRoomActions({ roomId, isActive }: { roomId: string, isActiv
         }`}
       >
         {isActive ? <PowerOff size={16} /> : <Power size={16} />}
-        {isActive ? 'غیرفعال کردن' : 'فعال کردن'}
+        {isActive ? 'غیرفعال' : 'فعال'}
       </button>
       
       <button 

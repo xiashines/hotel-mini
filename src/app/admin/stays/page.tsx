@@ -34,17 +34,20 @@ export default async function ActiveStaysPage() {
     orderBy: { checkIn: 'asc' }
   });
 
-  const getDaysRemaining = (checkOutDate: Date) => {
-    const diffTime = Math.abs(checkOutDate.getTime() - today.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const getDaysRemaining = (targetDate: Date) => {
+    const target = new Date(targetDate);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target.getTime() - today.getTime();
+    return Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
   };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
   };
 
-  const StayCard = ({ stay, isActive }: { stay: any, isActive: boolean }) => (
+  type StayType = typeof activeStays[0];
+
+  const StayCard = ({ stay, isActive }: { stay: StayType, isActive: boolean }) => (
     <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden transition-colors">
       <div className={`absolute top-0 right-0 text-white px-3 py-1 text-xs font-bold rounded-bl-lg ${isActive ? 'bg-green-500' : 'bg-blue-500'}`}>
         {isActive ? 'فعال' : 'پیش رو'}
@@ -55,7 +58,7 @@ export default async function ActiveStaysPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{stay.guest.email}</p>
         
         <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
-          <p><strong>اتاق‌ها:</strong> {stay.request.rooms.map((r: any) => r.room.name).join('، ')}</p>
+          <p><strong>اتاق‌ها:</strong> {stay.request.rooms.map((r) => r.room.name).join('، ')}</p>
           <p><strong>ورود:</strong> {formatDate(stay.checkIn)}</p>
           <p><strong>خروج:</strong> {formatDate(stay.checkOut)}</p>
         </div>
@@ -66,13 +69,13 @@ export default async function ActiveStaysPage() {
           </div>
         ) : (
           <div className="bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 p-3 rounded-lg text-center font-bold">
-            شروع از {getDaysRemaining(stay.checkIn)} روز دیگر
+            شروع در {getDaysRemaining(stay.checkIn)} روز آینده
           </div>
         )}
         
         <div className="mt-4 text-center">
           <Link href={`/admin/customers/${stay.guestId}`} className="text-blue-600 dark:text-blue-400 text-sm hover:underline">
-            مشاهده پروفایل مشتری
+            مشاهده تاریخچه کاربر
           </Link>
         </div>
       </div>
@@ -90,7 +93,7 @@ export default async function ActiveStaysPage() {
 
           {activeStays.length === 0 && (
             <div className="col-span-full text-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
-              <p className="text-gray-500 dark:text-gray-400 text-lg">در حال حاضر هیچ اقامت فعالی ثبت نشده است.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">در حال حاضر هیچ اقامت فعالی وجود ندارد.</p>
             </div>
           )}
         </div>
