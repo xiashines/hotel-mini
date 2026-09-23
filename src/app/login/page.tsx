@@ -21,8 +21,7 @@ export default function LoginPage() {
     const res = await login(null, formData);
 
     if (res.success) {
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } else {
       setError(res.message);
       setLoading(false);

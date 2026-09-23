@@ -19,7 +19,7 @@ export default function RegisterPage() {
     const res = await register(null, formData);
 
     if (res.success) {
-      router.push('/login?registered=true');
+      window.location.href = '/login?registered=true';
     } else {
       setError(res.message);
       setLoading(false);
