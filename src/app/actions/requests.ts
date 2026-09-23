@@ -19,6 +19,10 @@ export async function createReservationRequest(formData: FormData) {
   
   const checkIn = new Date(formData.get('checkIn') as string);
   const checkOut = new Date(formData.get('checkOut') as string);
+  
+  checkIn.setHours(14, 0, 0, 0);
+  checkOut.setHours(12, 0, 0, 0);
+
   const travelParty = formData.get('travelParty') as TravelParty;
   const maritalStatus = formData.get('maritalStatus') as MaritalStatus;
   const notes = formData.get('notes') as string;
@@ -28,8 +32,8 @@ export async function createReservationRequest(formData: FormData) {
     return { success: false, message: 'حداقل یک اتاق باید انتخاب شود.' };
   }
 
-  if (checkOut <= checkIn) {
-    return { success: false, message: 'تاریخ خروج باید بعد از تاریخ ورود باشد.' };
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
+    return { success: false, message: 'تاریخ خروج باید بعد از تاریخ ورود باشد (حداقل یک شب اقامت).' };
   }
 
   // Create the request
@@ -78,8 +82,12 @@ export async function deleteReservationRequest(requestId: string) {
 }
 
 export async function getAvailableRooms(checkInStr: string, checkOutStr: string) {
+  // Set times to strictly 14:00 (Check-in) and 12:00 (Check-out)
   const checkIn = new Date(checkInStr);
+  checkIn.setHours(14, 0, 0, 0);
+  
   const checkOut = new Date(checkOutStr);
+  checkOut.setHours(12, 0, 0, 0);
 
   if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
     return [];
@@ -91,22 +99,21 @@ export async function getAvailableRooms(checkInStr: string, checkOutStr: string)
     orderBy: { name: 'asc' }
   });
 
-  // Get overlapping reservations
-  const overlappingReservations = await prisma.reservation.findMany({
+  // Get overlapping requests (both APPROVED and PENDING)
+  const overlappingRequests = await prisma.reservationRequest.findMany({
     where: {
+      status: { in: ['APPROVED', 'PENDING'] },
       checkIn: { lte: checkOut },
       checkOut: { gte: checkIn }
     },
     include: {
-      request: {
-        include: { rooms: true }
-      }
+      rooms: true
     }
   });
 
   const bookedRoomIds = new Set<string>();
-  overlappingReservations.forEach(res => {
-    res.request.rooms.forEach(r => bookedRoomIds.add(r.roomId));
+  overlappingRequests.forEach(req => {
+    req.rooms.forEach(r => bookedRoomIds.add(r.roomId));
   });
 
   // Return rooms with availability flag

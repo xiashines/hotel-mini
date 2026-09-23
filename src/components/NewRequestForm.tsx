@@ -50,9 +50,13 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
     }
   }
 
-  // Calculate min dates (tomorrow)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Calculate min dates based on current time
+  const now = new Date();
+  const minDateForCheckIn = new Date();
+  // If it's past 12:00 PM, you cannot book for today anymore.
+  if (now.getHours() >= 12) {
+    minDateForCheckIn.setDate(minDateForCheckIn.getDate() + 1);
+  }
 
   return (
     <form action={handleSubmit} className="space-y-6">
@@ -64,26 +68,26 @@ export function NewRequestForm({ initialRooms }: { initialRooms: Room[] }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col">
-          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">تاریخ ورود</label>
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">تاریخ ورود (ساعت ۱۴:۰۰)</label>
           <DatePicker
             calendar={persian}
             locale={persian_fa}
             value={checkIn}
             onChange={setCheckIn}
-            minDate={tomorrow}
+            minDate={minDateForCheckIn}
             inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition"
             containerClassName="w-full"
             placeholder="انتخاب کنید..."
           />
         </div>
         <div className="flex flex-col">
-          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">تاریخ خروج</label>
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">تاریخ خروج (ساعت ۱۲:۰۰)</label>
           <DatePicker
             calendar={persian}
             locale={persian_fa}
             value={checkOut}
             onChange={setCheckOut}
-            minDate={checkIn || tomorrow}
+            minDate={checkIn ? new Date(checkIn.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date(minDateForCheckIn.getTime() + 24 * 60 * 60 * 1000)}
             inputClass="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left transition"
             containerClassName="w-full"
             placeholder="انتخاب کنید..."
