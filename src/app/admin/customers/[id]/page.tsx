@@ -2,9 +2,12 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
+export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const customerId = resolvedParams.id;
+
   const customer = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id: customerId },
     include: {
       requests: {
         include: {
