@@ -3,9 +3,10 @@ import { notFound, redirect } from 'next/navigation';
 import { updateRoom } from '@/app/actions/rooms';
 import Link from 'next/link';
 
-export default async function EditRoomPage({ params }: { params: { id: string } }) {
+export default async function EditRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const room = await prisma.room.findUnique({
-    where: { id: params.id }
+    where: { id }
   });
 
   if (!room) notFound();

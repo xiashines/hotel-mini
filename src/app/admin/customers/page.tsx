@@ -1,8 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
-export default async function CustomersPage({ searchParams }: { searchParams: { settlement?: string } }) {
-  const settlementFilter = searchParams.settlement;
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ settlement?: string }> }) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const settlementFilter = resolvedParams?.settlement;
   
   // Find all guests who have made at least one request
   const customers = await prisma.user.findMany({
