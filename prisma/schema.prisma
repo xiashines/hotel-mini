@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(GUEST)
+  createdAt    DateTime @default(now())
+
+  requests     ReservationRequest[]
+  reservations Reservation[]
+}
+
+enum Role {
+  ADMIN
+  GUEST
+}
+
+model Room {
+  id            String   @id @default(uuid())
+  name          String
+  capacity      Int
+  pricePerNight Int
+  description   String?
+  isActive      Boolean  @default(true)
+
+  requestRooms  ReservationRequestRoom[]
+}
+
+model ReservationRequest {
+  id               String   @id @default(uuid())
+  guestId          String
+  checkIn          DateTime
+  checkOut         DateTime
+  travelParty      TravelParty
+  maritalStatus    MaritalStatus
+  notes            String?
+  status           RequestStatus @default(PENDING)
+  settlementStatus SettlementStatus @default(UNSETTLED)
+  roomCount        Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  guest            User     @relation(fields: [guestId], references: [id])
+  rooms            ReservationRequestRoom[]
+  reservation      Reservation?
+}
+
+enum TravelParty {
+  ALONE
+  FAMILY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SettlementStatus {
+  UNSETTLED
+  SETTLED
+}
+
+model ReservationRequestRoom {
+  requestId String
+  roomId    String
+
+  request   ReservationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  room      Room               @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, roomId])
+}
+
+model Reservation {
+  id        String   @id @default(uuid())
+  requestId String   @unique
+  guestId   String
+  checkIn   DateTime
+  checkOut  DateTime
+
+  request   ReservationRequest @relation(fields: [requestId], references: [id])
+  guest     User               @relation(fields: [guestId], references: [id])
+}
+
+model StatusHistory {
+  id          String   @id @default(uuid())
+  guestId     String
+  requestId   String?
+  field       HistoryField
+  fromStatus  String?
+  toStatus    String
+  note        String?
+  actorId     String
+  createdAt   DateTime @default(now())
+}
+
+enum HistoryField {
+  REQUEST_STATUS
+  SETTLEMENT
+}
