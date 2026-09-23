@@ -7,6 +7,14 @@ export default async function Navbar() {
   const session = await auth();
   const user = session?.user;
 
+  let pendingCount = 0;
+  if (user?.role === 'ADMIN') {
+    const { prisma } = await import('@/lib/prisma');
+    pendingCount = await prisma.reservationRequest.count({
+      where: { status: 'PENDING' }
+    });
+  }
+
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,8 +33,13 @@ export default async function Navbar() {
                 </Link>
               )}
               {user?.role === 'ADMIN' && (
-                <Link href="/admin" className="text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm">
+                <Link href="/admin" className="relative text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm flex items-center gap-2">
                   پنل مدیریت
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow animate-pulse">
+                      {pendingCount}
+                    </span>
+                  )}
                 </Link>
               )}
             </div>
