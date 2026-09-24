@@ -1,13 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { auth } from '@/auth';
+import { getTodayEnd } from '@/lib/dateUtils';
 
 export default async function RoomsPage() {
   const session = await auth();
   const isAdmin = session?.user?.role === 'ADMIN';
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayEnd = getTodayEnd();
 
   const rooms = await prisma.room.findMany({
     where: { isActive: true },
@@ -18,7 +18,7 @@ export default async function RoomsPage() {
           request: {
             status: 'APPROVED',
             reservation: {
-              checkOut: { gt: today }
+              checkOut: { gt: todayEnd }
             }
           }
         },
@@ -56,7 +56,7 @@ export default async function RoomsPage() {
             .filter((res): res is NonNullable<typeof res> => res !== null)
             .sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
 
-          const isBookedNow = activeBookings.some(b => b.checkIn <= today && b.checkOut > today);
+          const isBookedNow = activeBookings.some(b => b.checkIn <= todayEnd && b.checkOut > todayEnd);
 
           return (
             <div key={room.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors flex flex-col h-full">

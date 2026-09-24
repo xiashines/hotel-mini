@@ -1,15 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { getTodayEnd, getTodayStart } from '@/lib/dateUtils';
 
 export default async function ActiveStaysPage() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayEnd = getTodayEnd();
+  const todayStart = getTodayStart();
 
-  // Active stays: checkIn <= today, checkOut > today
+  // Active stays: checkIn <= todayEnd, checkOut > todayEnd
   const activeStays = await prisma.reservation.findMany({
     where: {
-      checkIn: { lte: today },
-      checkOut: { gt: today }
+      checkIn: { lte: todayEnd },
+      checkOut: { gt: todayEnd }
     },
     include: {
       guest: true,
@@ -20,11 +21,12 @@ export default async function ActiveStaysPage() {
     orderBy: { checkOut: 'asc' }
   });
 
-  // Upcoming stays: checkIn > today
+  // Upcoming stays: checkIn > todayEnd
   const upcomingStays = await prisma.reservation.findMany({
     where: {
-      checkIn: { gt: today }
+      checkIn: { gt: todayEnd }
     },
+
     include: {
       guest: true,
       request: {
@@ -37,7 +39,7 @@ export default async function ActiveStaysPage() {
   const getDaysRemaining = (targetDate: Date) => {
     const target = new Date(targetDate);
     target.setHours(0, 0, 0, 0);
-    const diffTime = target.getTime() - today.getTime();
+    const diffTime = target.getTime() - todayStart.getTime();
     return Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
   };
 

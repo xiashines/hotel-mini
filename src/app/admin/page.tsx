@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { getTodayEnd } from '@/lib/dateUtils';
 
 export default async function AdminDashboard() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayEnd = getTodayEnd();
 
   const pendingRequestsCount = await prisma.reservationRequest.count({
     where: { status: 'PENDING' }
@@ -11,8 +11,8 @@ export default async function AdminDashboard() {
 
   const activeStaysCount = await prisma.reservation.count({
     where: {
-      checkIn: { lte: today },
-      checkOut: { gt: today }
+      checkIn: { lte: todayEnd },
+      checkOut: { gt: todayEnd }
     }
   });
 
@@ -24,8 +24,8 @@ export default async function AdminDashboard() {
       request: {
         status: 'APPROVED',
         reservation: {
-          checkIn: { lte: today },
-          checkOut: { gt: today }
+          checkIn: { lte: todayEnd },
+          checkOut: { gt: todayEnd }
         }
       }
     },
