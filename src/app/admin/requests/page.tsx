@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { RequestStatus, SettlementStatus, Prisma } from '@prisma/client';
 import AdminRequestActions from '@/components/AdminRequestActions';
 import Link from 'next/link';
+import { formatHotelDate } from '@/lib/dateUtils';
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -44,9 +45,7 @@ export default async function AdminRequestsPage({ searchParams }: Props) {
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
-  };
+
 
   return (
     <div>
@@ -85,8 +84,8 @@ export default async function AdminRequestsPage({ searchParams }: Props) {
               </div>
               
               <div className="text-sm text-gray-700 space-y-1 mb-3">
-                <p><strong>ورود:</strong> {formatDate(req.checkIn)}</p>
-                <p><strong>خروج:</strong> {formatDate(req.checkOut)}</p>
+                <p><strong>ورود:</strong> {formatHotelDate(req.checkIn, true)}</p>
+                <p><strong>خروج:</strong> {formatHotelDate(req.checkOut, true)}</p>
                 <p><strong>همراه:</strong> {req.travelParty === 'FAMILY' ? 'خانواده' : 'فردی'} - {req.maritalStatus === 'MARRIED' ? 'متاهل' : 'مجرد'}</p>
                 <p><strong>اتاق(ها):</strong> {req.rooms.map(r => r.room.name).join('، ')}</p>
                 {req.notes && (

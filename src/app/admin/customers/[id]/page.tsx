@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { formatHotelDateTime } from '@/lib/dateUtils';
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -27,12 +28,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     orderBy: { createdAt: 'desc' }
   });
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fa-IR', { 
-      year: 'numeric', month: 'long', day: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
-    }).format(date);
-  };
+
 
   return (
     <div>
@@ -50,7 +46,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               <div key={req.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">REQ-{req.id.split('-')[0]}</span>
-                  <span className="text-xs text-gray-500">{formatDate(req.createdAt)}</span>
+                  <span className="text-xs text-gray-500">{formatHotelDateTime(req.createdAt)}</span>
                 </div>
                 <p className="text-sm">اتاق‌ها: {req.rooms.map(r => r.room.name).join('، ')}</p>
                 <div className="flex gap-2 mt-3">
@@ -81,7 +77,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                   <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
                     <div className="flex items-center justify-between space-x-2 mb-1">
                       <div className="font-bold text-slate-900">{item.field === 'REQUEST_STATUS' ? 'تغییر وضعیت رزرو' : 'تغییر وضعیت مالی'}</div>
-                      <time className="font-mono text-xs text-slate-500">{formatDate(item.createdAt)}</time>
+                      <time className="font-mono text-xs text-slate-500">{formatHotelDateTime(item.createdAt)}</time>
                     </div>
                     <div className="text-slate-600 text-sm mt-2">
                       تغییر از <strong>{item.fromStatus || 'نامشخص'}</strong> به <strong>{item.toStatus}</strong>

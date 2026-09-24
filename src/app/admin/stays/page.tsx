@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { getTodayEnd, getTodayStart } from '@/lib/dateUtils';
+import { getHotelTodayEnd, getDaysRemaining, formatHotelDate } from '@/lib/dateUtils';
 
 export default async function ActiveStaysPage() {
-  const todayEnd = getTodayEnd();
-  const todayStart = getTodayStart();
+  const todayEnd = getHotelTodayEnd();
+  
 
   // Active stays: checkIn <= todayEnd, checkOut > todayEnd
   const activeStays = await prisma.reservation.findMany({
@@ -36,16 +36,9 @@ export default async function ActiveStaysPage() {
     orderBy: { checkIn: 'asc' }
   });
 
-  const getDaysRemaining = (targetDate: Date) => {
-    const target = new Date(targetDate);
-    target.setHours(0, 0, 0, 0);
-    const diffTime = target.getTime() - todayStart.getTime();
-    return Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
-  };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
-  };
+
+
 
   type StayType = typeof activeStays[0];
 
@@ -61,8 +54,8 @@ export default async function ActiveStaysPage() {
         
         <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
           <p><strong>اتاق‌ها:</strong> {stay.request.rooms.map((r) => r.room.name).join('، ')}</p>
-          <p><strong>ورود:</strong> {formatDate(stay.checkIn)}</p>
-          <p><strong>خروج:</strong> {formatDate(stay.checkOut)}</p>
+          <p><strong>ورود:</strong> {formatHotelDate(stay.checkIn, true)}</p>
+          <p><strong>خروج:</strong> {formatHotelDate(stay.checkOut, true)}</p>
         </div>
 
         {isActive ? (

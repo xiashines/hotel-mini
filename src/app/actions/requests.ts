@@ -5,6 +5,8 @@ import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { TravelParty, MaritalStatus } from '@prisma/client';
+import { createHotelCheckIn, createHotelCheckOut, getHotelTodayStart, HOTEL_TZ } from '@/lib/dateUtils';
+import { formatInTimeZone } from 'date-fns-tz';
 
 async function getUser() {
   const session = await auth();
@@ -17,11 +19,8 @@ async function getUser() {
 export async function createReservationRequest(formData: FormData) {
   const user = await getUser();
   
-  const checkIn = new Date(formData.get('checkIn') as string);
-  const checkOut = new Date(formData.get('checkOut') as string);
-  
-  checkIn.setHours(14, 0, 0, 0);
-  checkOut.setHours(12, 0, 0, 0);
+  const checkIn = createHotelCheckIn(formData.get('checkIn') as string);
+  const checkOut = createHotelCheckOut(formData.get('checkOut') as string);
 
   const travelParty = formData.get('travelParty') as TravelParty;
   const maritalStatus = formData.get('maritalStatus') as MaritalStatus;
@@ -105,12 +104,8 @@ export async function deleteReservationRequest(requestId: string) {
 }
 
 export async function getAvailableRooms(checkInStr: string, checkOutStr: string) {
-  // Set times to strictly 14:00 (Check-in) and 12:00 (Check-out)
-  const checkIn = new Date(checkInStr);
-  checkIn.setHours(14, 0, 0, 0);
-  
-  const checkOut = new Date(checkOutStr);
-  checkOut.setHours(12, 0, 0, 0);
+  const checkIn = createHotelCheckIn(checkInStr);
+  const checkOut = createHotelCheckOut(checkOutStr);
 
   if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
     return [];
@@ -150,13 +145,12 @@ export async function getFullyBookedDates() {
   const allRoomsCount = await prisma.room.count({ where: { isActive: true } });
   if (allRoomsCount === 0) return [];
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStart = getHotelTodayStart();
 
   const futureRequests = await prisma.reservationRequest.findMany({
     where: {
       status: { in: ['APPROVED', 'PENDING'] },
-      checkOut: { gt: today }
+      checkOut: { gt: todayStart }
     },
     include: { rooms: true }
   });
@@ -165,18 +159,19 @@ export async function getFullyBookedDates() {
 
   // For each request, mark the dates between checkIn and checkOut (exclusive of checkOut day)
   futureRequests.forEach(req => {
-    const current = new Date(req.checkIn);
-    current.setHours(0, 0, 0, 0);
-    const end = new Date(req.checkOut);
-    end.setHours(0, 0, 0, 0);
+    let currentStr = formatInTimeZone(req.checkIn, HOTEL_TZ, 'yyyy-MM-dd');
+    const endStr = formatInTimeZone(req.checkOut, HOTEL_TZ, 'yyyy-MM-dd');
 
-    while (current < end) {
-      const dateStr = current.toISOString().split('T')[0];
-      if (!bookedCountsPerDay[dateStr]) {
-        bookedCountsPerDay[dateStr] = new Set();
+    const currentDate = new Date(`${currentStr}T12:00:00Z`);
+
+    while (currentStr < endStr) {
+      if (!bookedCountsPerDay[currentStr]) {
+        bookedCountsPerDay[currentStr] = new Set();
       }
-      req.rooms.forEach(r => bookedCountsPerDay[dateStr].add(r.roomId));
-      current.setDate(current.getDate() + 1);
+      req.rooms.forEach(r => bookedCountsPerDay[currentStr].add(r.roomId));
+      
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+      currentStr = currentDate.toISOString().split('T')[0];
     }
   });
 

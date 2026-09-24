@@ -1,13 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { auth } from '@/auth';
-import { getTodayEnd } from '@/lib/dateUtils';
+import { getHotelTodayEnd, formatHotelDate } from '@/lib/dateUtils';
 
 export default async function RoomsPage() {
   const session = await auth();
   const isAdmin = session?.user?.role === 'ADMIN';
 
-  const todayEnd = getTodayEnd();
+  const todayEnd = getHotelTodayEnd();
 
   const rooms = await prisma.room.findMany({
     where: { isActive: true },
@@ -30,10 +30,6 @@ export default async function RoomsPage() {
       }
     }
   });
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fa-IR', { month: 'long', day: 'numeric' }).format(date);
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -76,7 +72,7 @@ export default async function RoomsPage() {
                     <ul className="space-y-1">
                       {activeBookings.map(b => (
                         <li key={b.id} className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-1.5 rounded">
-                          از {formatDate(b.checkIn)} تا {formatDate(b.checkOut)}
+                          از {formatHotelDate(b.checkIn)} تا {formatHotelDate(b.checkOut)}
                         </li>
                       ))}
                     </ul>

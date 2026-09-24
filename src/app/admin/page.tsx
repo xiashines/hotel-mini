@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { getTodayEnd } from '@/lib/dateUtils';
+import { getHotelTodayEnd } from '@/lib/dateUtils';
 
 export default async function AdminDashboard() {
-  const todayEnd = getTodayEnd();
+  const todayEnd = getHotelTodayEnd();
 
   const pendingRequestsCount = await prisma.reservationRequest.count({
     where: { status: 'PENDING' }
