@@ -5,7 +5,7 @@ import { getPendingRequestsCount } from '@/app/actions/notifications';
 import Link from 'next/link';
 
 export function AdminNotifier() {
-  const [lastCount, setLastCount] = useState<number | null>(null);
+  const [, setLastCount] = useState<number | null>(null);
   const [showNotification, setShowNotification] = useState(false);
   const [newCount, setNewCount] = useState(0);
 

@@ -63,7 +63,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           <h2 className="text-xl font-bold mb-4">تاریخچه عملیات (تایم‌لاین)</h2>
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-              {history.map((item, index) => (
+              {history.map((item) => (
                 <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-blue-100 text-blue-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

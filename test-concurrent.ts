@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { approveRequest } from './src/app/actions/admin';
 import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -50,7 +49,7 @@ async function runConcurrentTest() {
   checkOut.setDate(checkOut.getDate() + 2);
   checkOut.setHours(12, 0, 0, 0);
 
-  const request = await prisma.reservationRequest.create({
+  await prisma.reservationRequest.create({
     data: {
       guestId: guest.id,
       checkIn,

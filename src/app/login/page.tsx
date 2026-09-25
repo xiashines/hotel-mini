@@ -3,15 +3,12 @@
 import { useState } from 'react';
 import { login } from '@/app/actions/auth';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  // We can't easily use useSearchParams without Suspense in some Next.js versions, but in Client Components it's ok.
-  // Actually, wait, useSearchParams in app router forces client side rendering. Let's wrap in Suspense or just use it.
-  
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -21,7 +18,8 @@ export default function LoginPage() {
     const res = await login(null, formData);
 
     if (res && res.success) {
-      window.location.href = '/';
+      router.push('/');
+      router.refresh();
     } else if (res) {
       setError(res.message);
       setLoading(false);

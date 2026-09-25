@@ -1,5 +1,5 @@
-import { getHotelTodayEnd, getHotelTodayStart, getEndOfDay, createHotelCheckIn, createHotelCheckOut, HOTEL_TZ } from './src/lib/dateUtils';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { getHotelTodayEnd, getEndOfDay, createHotelCheckIn, createHotelCheckOut, HOTEL_TZ } from './src/lib/dateUtils';
+import { formatInTimeZone } from 'date-fns-tz';
 
 function runTests() {
   console.log(`--- Occupancy Logic Tests (Run in TZ=${process.env.TZ || 'Local'}) ---`);
